@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4 fade-in fade-in-1">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">👥</div>
+            <div class="stat-label">Total Participants</div>
+            <div class="stat-value">{{ total }}</div>
+        </div>
+    </div>
+    <div class="col-md-4 fade-in fade-in-2">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">🟢</div>
+            <div class="stat-label">Available</div>
+            <div class="stat-value">{{ available }}</div>
+        </div>
+    </div>
+    <div class="col-md-4 fade-in fade-in-3">
+        <div class="stat-card stat-card-danger">
+            <div class="stat-icon">🔴</div>
+            <div class="stat-label">Assigned</div>
+            <div class="stat-value">{{ assigned }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Quick Actions -->
+    <div class="col-lg-6 fade-in fade-in-2">
+        <div class="card card-no-hover h-100">
+            <div class="card-header">
+                <i class="bi bi-lightning-charge me-2 text-warning"></i>Quick Actions
+            </div>
+            <div class="card-body d-flex flex-column gap-3">
+                <button type="button" class="btn btn-primary btn-lg w-100 text-start" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-cloud-arrow-up me-2"></i> Import Participants
+                </button>
+                <a href="{{ url_for('main.participants') }}" class="btn btn-outline-info btn-lg w-100 text-start">
+                    <i class="bi bi-people me-2"></i> View Participants
+                </a>
+                <a href="{{ url_for('main.create_game') }}" class="btn btn-outline-success btn-lg w-100 text-start">
+                    <i class="bi bi-plus-circle me-2"></i> Create Game
+                </a>
+                <hr class="my-1">
+                <button type="button" class="btn btn-outline-danger btn-lg w-100 text-start" data-bs-toggle="modal" data-bs-target="#resetAllModal">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Reset All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Games -->
+    <div class="col-lg-6 fade-in fade-in-3">
+        <div class="card card-no-hover h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-trophy me-2 text-warning"></i>Recent Games</span>
+                <a href="{{ url_for('main.games') }}" class="btn btn-sm btn-ghost"><i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for game in games %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('main.game_result', game_id=game.id) }}" class="fw-bold text-decoration-none" style="color: var(--text-primary);">
+                            {{ game.name }}
+                        </a>
+                        <span class="badge bg-secondary rounded-pill">{{ game.type }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center py-4" style="color: var(--text-muted);">
+                        <i class="bi bi-inbox me-1"></i> No games created yet.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff;">
+        <h5 class="modal-title" id="importModalLabel"><i class="bi bi-cloud-arrow-up me-2"></i>Import Participants</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('main.import_participants') }}" method="POST" enctype="multipart/form-data">
+          <div class="modal-body">
+              <ul class="nav nav-tabs mb-3" id="importTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                      <button class="nav-link active" id="csv-tab" data-bs-toggle="tab" data-bs-target="#csv-tab-pane" type="button" role="tab">CSV Upload</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-tab-pane" type="button" role="tab">Google Sheet URL</button>
+                  </li>
+              </ul>
+              
+              <div class="tab-content" id="importTabsContent">
+                  <!-- CSV Tab -->
+                  <div class="tab-pane fade show active" id="csv-tab-pane" role="tabpanel" tabindex="0">
+                      <input type="hidden" name="source_type" value="csv" id="sourceType">
+                      <div class="mb-3">
+                          <label for="csvFile" class="form-label">Upload CSV File</label>
+                          <input class="form-control" type="file" id="csvFile" name="csv_file" accept=".csv">
+                      </div>
+                      <div class="form-text">CSV must contain columns: Name, Department, Gender. (Photo URL optional)</div>
+                  </div>
+                  <!-- URL Tab -->
+                  <div class="tab-pane fade" id="url-tab-pane" role="tabpanel" tabindex="0">
+                      <div class="mb-3">
+                          <label for="googleSheetUrl" class="form-label">Published CSV Link</label>
+                          <input type="url" class="form-control" id="googleSheetUrl" name="google_sheet_url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+                      </div>
+                      <div class="form-text">Ensure the Google Sheet is published to web as CSV.</div>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" onclick="updateSourceType()"><i class="bi bi-download me-1"></i>Import</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+    function updateSourceType() {
+        const activeTab = document.querySelector('.nav-link.active').id;
+        const hiddenInput = document.getElementById('sourceType');
+        if (activeTab === 'url-tab') {
+            hiddenInput.value = 'url';
+        } else {
+            hiddenInput.value = 'csv';
+        }
+    }
+</script>
+{% endblock %}

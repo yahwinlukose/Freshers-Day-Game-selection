@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Participants{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+    <div>
+        <h2 class="page-heading mb-0">Participants</h2>
+        <p class="page-subtitle">Manage and filter your participant list</p>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card card-no-hover mb-4 fade-in fade-in-1">
+    <div class="card-body py-3">
+        <form method="GET" action="{{ url_for('main.participants') }}" class="row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6">
+                <label for="searchInput" class="form-label">Search</label>
+                <div class="position-relative">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by name..." value="" style="padding-left: 40px;" onkeydown="return event.key != 'Enter';">
+                    <i class="bi bi-search position-absolute" style="left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Department</label>
+                <select class="form-select" name="department">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                    <option value="{{ d }}" {% if sel_dept == d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="form-label">Gender</label>
+                <select class="form-select" name="gender">
+                    <option value="">All Genders</option>
+                    <option value="Male" {% if sel_gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if sel_gender == 'Female' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="Available" {% if sel_status == 'Available' %}selected{% endif %}>Available</option>
+                    <option value="Assigned" {% if sel_status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4 d-grid">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i> Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Participants Grid -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4" id="participantsGrid">
+    {% for p in participants %}
+    <div class="col participant-col fade-in" style="animation-delay: {{ loop.index0 * 0.03 }}s; opacity: 0;">
+        <div class="card participant-card h-100">
+            {% if p.photo_path %}
+                <img src="{{ get_participant_image_url(p) }}" class="card-img-top participant-img" alt="{{ p.name }}" onerror="this.src='{{ url_for('static', filename='images/default-avatar.png') }}'">
+            {% else %}
+                <div class="card-img-top d-flex align-items-center justify-content-center participant-img-placeholder">
+                    <i class="bi bi-person" style="font-size: 3.5rem; color: var(--text-muted);"></i>
+                </div>
+            {% endif %}
+            
+            <div class="card-body">
+                <h6 class="fw-bold text-truncate mb-2" title="{{ p.name }}" style="color: var(--text-primary);">{{ p.name }}</h6>
+                <p class="mb-1" style="font-size: 0.8rem; color: var(--text-secondary);">
+                    <i class="bi bi-building me-1"></i> {{ p.department }}
+                </p>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="badge bg-secondary">{{ p.gender }}</span>
+                    {% if p.status == 'Available' %}
+                        <span class="badge bg-success">Available</span>
+                    {% else %}
+                        <span class="badge bg-danger">Assigned</span>
+                    {% endif %}
+                </div>
+                
+                {% if not p.photo_path %}
+                <form action="{{ url_for('main.upload_photo', participant_id=p.id) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                    <div class="input-group input-group-sm">
+                        <input type="file" class="form-control" name="photo" accept="image/*" required style="font-size: 0.75rem;">
+                        <button class="btn btn-outline-primary" type="submit" style="border-radius: 0 var(--radius-md) var(--radius-md) 0;"><i class="bi bi-upload"></i></button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-people"></i></div>
+            <p class="empty-state-title">No participants found</p>
+            <p class="empty-state-text">Import participants from the Dashboard to get started.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- No Search Results State (Hidden by default) -->
+<div id="noSearchResults" class="col-12 d-none">
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+        <p class="empty-state-title">No participants found</p>
+        <p class="empty-state-text">No one matches your search query.</p>
+        <button type="button" class="btn btn-outline-primary mt-3" onclick="clearSearch()">Clear Search</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const participantCols = document.querySelectorAll('.participant-col');
+    const noSearchResults = document.getElementById('noSearchResults');
+
+    function filterParticipants() {
+        const query = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        participantCols.forEach(col => {
+            const nameEl = col.querySelector('h6.fw-bold');
+            if (nameEl) {
+                const name = nameEl.textContent.trim().toLowerCase();
+                if (name.includes(query)) {
+                    col.classList.remove('d-none');
+                    visibleCount++;
+                } else {
+                    col.classList.add('d-none');
+                }
+            }
+        });
+
+        if (visibleCount === 0 && participantCols.length > 0) {
+            noSearchResults.classList.remove('d-none');
+        } else {
+            noSearchResults.classList.add('d-none');
+        }
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        filterParticipants();
+        searchInput.focus();
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterParticipants);
+        
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearSearch();
+            }
+        });
+    }
+</script>
+{% endblock %}

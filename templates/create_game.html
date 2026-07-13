@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Create Game{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-lg-7 col-md-9">
+        <div class="mb-4">
+            <h2 class="page-heading">Create a New Game</h2>
+            <p class="page-subtitle">Configure your game type, team settings, and gender rules.</p>
+        </div>
+
+        <div class="card card-no-hover">
+            <div class="card-body p-4 p-lg-5">
+                <form action="{{ url_for('main.create_game') }}" method="POST">
+                    <div class="mb-4">
+                        <label for="name" class="form-label">Game Name</label>
+                        <input type="text" class="form-control form-control-lg" id="name" name="name" required placeholder="e.g. Treasure Hunt">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label d-block">Game Type</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="type" id="typeIndividual" value="Individual" autocomplete="off" checked onchange="toggleTeamSettings()">
+                            <label class="btn btn-outline-primary" for="typeIndividual"><i class="bi bi-person me-1"></i> Individual</label>
+
+                            <input type="radio" class="btn-check" name="type" id="typeTeam" value="Team" autocomplete="off" onchange="toggleTeamSettings()">
+                            <label class="btn btn-outline-primary" for="typeTeam"><i class="bi bi-people me-1"></i> Team</label>
+                        </div>
+                    </div>
+
+                    <div id="teamSettings" style="display: none;" class="p-4 rounded mb-4" style="background: var(--border-light); border: 1px solid var(--border);">
+                        <h6 class="fw-bold mb-3" style="color: var(--text-primary);"><i class="bi bi-sliders me-1"></i> Team Settings</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="team_size_team" class="form-label">Members Per Team</label>
+                                <input type="number" class="form-control" id="team_size_team" name="team_size_team" min="1" value="5">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="number_of_teams" class="form-label">Number Of Teams</label>
+                                <input type="number" class="form-control" id="number_of_teams" name="number_of_teams" min="1" value="4">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="individualSettings" class="mb-4">
+                        <label for="team_size_ind" class="form-label">Number of Participants Needed</label>
+                        <input type="number" class="form-control" id="team_size_ind" name="team_size_ind" min="1" value="10">
+                    </div>
+                    
+                    <!-- Hidden input to unify team_size submit -->
+                    <input type="hidden" name="team_size" id="final_team_size" value="10">
+
+                    <div class="mb-4">
+                        <label for="gender_rule" class="form-label">Gender Rule</label>
+                        <select class="form-select" id="gender_rule" name="gender_rule">
+                            <option value="Random">Random (Completely random)</option>
+                            <option value="Male Only">Male Only (Only male participants)</option>
+                            <option value="Female Only">Female Only (Only female participants)</option>
+                            <option value="Mixed">Mixed (Balanced teams)</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold" onclick="prepareSubmit()">
+                            <i class="bi bi-magic me-2"></i> Generate Teams
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleTeamSettings() {
+        const typeIndividual = document.getElementById('typeIndividual').checked;
+        const teamSettings = document.getElementById('teamSettings');
+        const individualSettings = document.getElementById('individualSettings');
+        
+        if (typeIndividual) {
+            teamSettings.style.display = 'none';
+            individualSettings.style.display = 'block';
+        } else {
+            teamSettings.style.display = 'block';
+            individualSettings.style.display = 'none';
+        }
+    }
+    
+    function prepareSubmit() {
+        const typeIndividual = document.getElementById('typeIndividual').checked;
+        const finalTeamSize = document.getElementById('final_team_size');
+        
+        if (typeIndividual) {
+            finalTeamSize.value = document.getElementById('team_size_ind').value;
+        } else {
+            finalTeamSize.value = document.getElementById('team_size_team').value;
+        }
+    }
+</script>
+{% endblock %}

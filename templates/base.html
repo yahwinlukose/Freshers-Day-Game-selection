@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freshers Day Game Manager</title>
+    <meta name="description" content="Freshers Day Game Manager — organize games, manage participants, and spin the punishment wheel.">
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <span class="sidebar-logo">
+                    <span class="sidebar-logo-icon"><i class="bi bi-dice-5"></i></span>
+                    Game Manager
+                </span>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('main.index') }}" class="list-group-item list-group-item-action sidebar-nav-item {% if request.endpoint == 'main.index' %}active-nav{% endif %}">
+                    <i class="bi bi-grid-1x2"></i> Dashboard
+                </a>
+                <a href="{{ url_for('main.participants') }}" class="list-group-item list-group-item-action sidebar-nav-item {% if request.endpoint == 'main.participants' %}active-nav{% endif %}">
+                    <i class="bi bi-people"></i> Participants
+                </a>
+                <a href="{{ url_for('main.create_game') }}" class="list-group-item list-group-item-action sidebar-nav-item {% if request.endpoint == 'main.create_game' %}active-nav{% endif %}">
+                    <i class="bi bi-plus-circle"></i> Create Game
+                </a>
+                <a href="{{ url_for('main.games') }}" class="list-group-item list-group-item-action sidebar-nav-item {% if request.endpoint == 'main.games' %}active-nav{% endif %}">
+                    <i class="bi bi-trophy"></i> All Games
+                </a>
+                <a href="{{ url_for('punishment.wheel') }}" class="list-group-item list-group-item-action sidebar-nav-item {% if request.endpoint and request.endpoint.startswith('punishment.') %}active-nav{% endif %}">
+                    <i class="bi bi-record-circle"></i> Punishment Wheel
+                </a>
+            </div>
+            <div class="sidebar-bottom">
+                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#resetAllModal">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset All
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <!-- Glassmorphism Top Bar -->
+            <nav class="topbar">
+                <div class="topbar-left">
+                    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                    <h1 class="topbar-title">{% block page_title %}Freshers Day{% endblock %}</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-icon-btn" title="Settings"><i class="bi bi-gear"></i></button>
+                </div>
+            </nav>
+
+            <div class="page-content">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' %}x-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset All Modal -->
+    <div class="modal fade" id="resetAllModal" tabindex="-1" aria-labelledby="resetAllModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, var(--danger), #B91C1C); color: #fff;">
+            <h5 class="modal-title" id="resetAllModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Reset All</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">This will remove all participant assignments from every game. All participants will become available again. This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <form action="{{ url_for('main.reset_all') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-danger"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset All</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('sidebarToggle').addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('wrapper').classList.toggle('toggled');
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
